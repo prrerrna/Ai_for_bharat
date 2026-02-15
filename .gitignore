@@ -43,3 +43,6 @@ Godeps/
 # macOS
 .Spotlight-V100
 .Trashes
+
+# Project-specific
+prompt.md
