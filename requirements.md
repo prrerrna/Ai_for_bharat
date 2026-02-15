@@ -1,25 +1,25 @@
 ## Project Overview
 
-ProofPack is an operator-first evidence capture and eligibility verification system for Indian social welfare schemes. The system enables CSC operators, VLEs, and NGO field workers to collect voice narratives, supporting documents, and geolocation data via a Progressive Web App, then automatically processes this evidence through AWS services to generate structured ProofPacks for scheme administrators.
+ProofPack is an operator-first evidence capture and eligibility verification system for Indian social welfare schemes. The system enables CSC operators, VLEs, and NGO field workers to collect voice narratives, supporting documents, and geolocation data via a Progressive Web App, then processes this evidence through AWS services to generate structured ProofPacks for scheme administrators.
 
 Primary intake is the ProofPack PWA, which captures uncompressed photos with HTML5 geolocation and voice attestations. WhatsApp is a degraded fallback channel only and is unreliable for EXIF metadata and geolocation unless files are uploaded as documents rather than compressed images.
 
-The MVP demonstrates end-to-end processing for two schemes: MGNREGA wage/payment grievances (Job Card focus) and Widow Pension applications. The architecture supports national extensibility through modular per-state rule packs.
+The MVP demonstrates end-to-end processing for two schemes: MGNREGA wage/payment grievances (Job Card focus) and Widow Pension applications. The architecture supports extensibility through modular per-state rule packs. MVP does not claim nationwide coverage.
 
 ## Goals
 
-- Reduce evidence collection time from 45+ minutes to under 10 minutes per case
-- Achieve 85%+ automated field extraction accuracy for printed English documents
-- Generate submission-ready ProofPacks with zero manual data entry for 70%+ of cases
-- Support Hindi voice narratives with 80%+ transcription accuracy via Amazon Transcribe
+- Reduce evidence collection time from 45+ minutes to target of under 10 minutes per case
+- Target automated field extraction accuracy for printed English documents (prototype assumption)
+- Generate submission-ready ProofPacks with operator review workflow
+- Support Hindi voice narratives via Amazon Transcribe
 - Enable offline-first PWA capture with automatic sync when connectivity returns
 - Provide deterministic eligibility decisions via per-state JSON rule packs
-- Deliver human-readable explanations and remediation guidance for all rejection cases
-- Maintain end-to-end audit trail with cryptographic attestation for all evidence
+- Deliver human-readable explanations and remediation guidance via LLM (explanation only)
+- Maintain end-to-end audit trail with OTP attestation for all evidence
 
 ## Target Personas
 
-Primary: CSC operators, VLEs, and NGO field workers who assist beneficiaries with scheme applications and grievances. These operators have basic smartphone literacy, intermittent connectivity, and handle 5-15 cases per day across multiple schemes.
+Primary: CSC operators, VLEs, and NGO field workers who assist beneficiaries with scheme applications and grievances. These operators have basic smartphone literacy, intermittent connectivity, and handle multiple cases per day across schemes.
 
 Secondary: Scheme beneficiaries (rural residents, widows, MGNREGA workers) who provide voice narratives in Hindi or regional languages and present physical documents for capture.
 
@@ -30,7 +30,7 @@ The MVP covers two schemes:
 1. MGNREGA wage/payment grievance processing (Job Card verification focus)
 2. Widow Pension application archetype (age verification, spouse death certificate, income proof)
 
-The system architecture uses modular per-state JSON rule packs to enable national extensibility. The MVP does not claim nationwide coverage but demonstrates the technical pattern for scaling to additional schemes and states.
+The system architecture uses modular per-state JSON rule packs to enable extensibility. The MVP does not claim nationwide coverage but demonstrates the technical pattern for scaling to additional schemes and states.
 
 ## Inputs & Outputs
 
@@ -44,7 +44,7 @@ Inputs:
 Outputs:
 - ProofPack PDF (cover page + evidence pages + eligibility summary)
 - ProofPack JSON (structured metadata, transcripts, extracted fields, eligibility decision, audit log)
-- Submission payload (scheme-specific JSON for government portal APIs)
+- Submission payload (scheme-specific JSON for government portal APIs, stub in MVP)
 - Remediation guidance (human-readable explanation of missing/invalid evidence)
 
 ## Functional Requirements
@@ -63,25 +63,25 @@ Outputs:
 
 7. LLM Explanation: Use Amazon Bedrock (Claude 3 Haiku) to generate human-readable explanations of eligibility decisions and remediation templates. LLM does not make eligibility decisions, only explains rule engine output.
 
-8. OTP Attestation: Generate 6-digit OTP sent to operator mobile. Operator enters OTP to cryptographically attest that evidence was collected in their presence. Store attestation timestamp and operator ID in audit log.
+8. OTP Attestation: Generate 6-digit OTP sent to operator mobile. Operator enters OTP to attest that evidence was collected in their presence. Store attestation timestamp and operator ID in audit log.
 
 9. ProofPack Generator: Render PDF with cover page (claimant details, scheme, eligibility summary), evidence pages (photos with captions, transcript excerpts), and footer with QR code linking to JSON. Generate companion JSON with full structured data.
 
-10. Submission Adapter: Transform ProofPack JSON into scheme-specific submission payloads for government portal APIs. Support manual download of PDF+JSON for offline submission.
+10. Submission Adapter: Transform ProofPack JSON into scheme-specific submission payloads for government portal APIs (stub in MVP). Support manual download of PDF+JSON for offline submission.
 
 11. Manual Correction UI: Operator reviews extracted fields, transcript, and eligibility decision. Operator can correct OCR errors, edit transcript, and override missing field flags. All corrections logged in audit trail.
 
 ## Non-Functional Requirements
 
-- Latency: End-to-end processing (upload to ProofPack generation) completes in under 90 seconds for typical case (2-minute voice, 4 photos)
+- Latency: Target end-to-end processing under 90 seconds for typical case (2-minute voice, 4 photos)
 - Security: All media encrypted at rest with SSE-KMS. API endpoints require JWT authentication. OTP attestation required before ProofPack finalization. No PII in CloudWatch logs.
-- Retention: Raw media retained for 90 days, then auto-deleted. ProofPack JSON retained for 7 years per government audit requirements.
-- Scalability: System handles 1000 concurrent operators during peak hours. S3 and Lambda auto-scale. DynamoDB provisioned for 500 writes/sec.
-- Accessibility: PWA meets WCAG 2.1 AA for operator UI. Voice prompts and large touch targets for low-literacy operators.
+- Retention: Raw media retained for 90 days, then auto-deleted. ProofPack JSON retention configurable per deployment (prototype assumption for audit-aligned retention).
+- Scalability: System designed to handle concurrent operators during peak hours. S3 and Lambda auto-scale. DynamoDB on-demand billing.
+- Accessibility: PWA targets WCAG 2.1 AA for operator UI. Voice prompts and large touch targets for low-literacy operators.
 
 ## Acceptance Tests
 
-1. Given a Job Card photo with printed Aadhaar number, When Textract processes the image, Then the 12-digit Aadhaar is extracted with 95%+ confidence.
+1. Given a Job Card photo with printed Aadhaar number, When Textract processes the image, Then the 12-digit Aadhaar is extracted (target confidence threshold).
 
 2. Given a case missing spouse death certificate, When rule engine evaluates Widow Pension rules, Then eligibility is "incomplete" and missing_fields includes "spouse_death_certificate".
 
@@ -108,16 +108,17 @@ AWS Services:
 
 WhatsApp Caveat: WhatsApp compresses images and strips EXIF metadata including geolocation unless files are sent as documents. WhatsApp is a degraded fallback channel and operators must be trained to upload as documents, not images.
 
-External: Government scheme portal APIs for submission (integration TBD per state).
+External: Government scheme portal APIs for submission (integration TBD per state, stub in MVP).
 
-## Success Metrics
+## Target Metrics
 
-- ProofPack generation success rate: 90%+ of ingested cases produce valid ProofPacks
-- Operator time per case: Median under 10 minutes from scheme selection to ProofPack download
-- Automated extraction accuracy: 85%+ of printed English fields extracted without operator correction
-- Transcription accuracy: 80%+ word-level accuracy for Hindi voice narratives
-- Attestation compliance: 95%+ of ProofPacks attested with OTP before submission
-- System uptime: 99.5%+ availability during business hours (9 AM - 6 PM IST)
+Prototype targets for pilot evaluation:
+- ProofPack generation success rate target
+- Operator time per case target: under 10 minutes from scheme selection to ProofPack download
+- Automated extraction accuracy target for printed English fields
+- Transcription accuracy target for Hindi voice narratives
+- Attestation compliance target
+- System availability target during business hours
 
 ## Ethical & Legal Considerations
 
