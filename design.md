@@ -120,7 +120,8 @@ Rule packs are JSON files stored in S3 with schema:
       "rule_id": "MH_MGNREGA_002",
       "description": "Wage payment delay must exceed 15 days",
       "condition": {">": [{"var": "days_since_work"}, 15]},
-      "severity": "error"
+      "severity": "error",
+      "note": "TODO: Verify payment timeline from MGNREGA Act Section 3"
     },
     {
       "rule_id": "MH_MGNREGA_003",
@@ -162,13 +163,15 @@ TODO: Verify official required documents from https://nrega.nic.in/Circular_Arch
         {">=": [{"var": "applicant_age"}, 18]},
         {"<=": [{"var": "applicant_age"}, 60]}
       ]},
-      "severity": "error"
+      "severity": "error",
+      "note": "TODO: Verify age range from official UP widow pension guidelines"
     },
     {
       "rule_id": "UP_WIDOW_002",
       "description": "Annual household income must be below poverty line",
       "condition": {"<": [{"var": "annual_income"}, 46080]},
-      "severity": "error"
+      "severity": "error",
+      "note": "TODO: Verify income threshold from official UP poverty line definition"
     }
   ],
   "required_documents": [
@@ -560,7 +563,8 @@ Future Work:
       "rule_id": "KA_MGNREGA_003",
       "description": "Payment delay must exceed 15 days from work completion",
       "condition": {">": [{"var": "days_since_work"}, 15]},
-      "severity": "error"
+      "severity": "error",
+      "note": "TODO: Verify payment timeline from MGNREGA Act Section 3"
     }
   ],
   "required_documents": [
